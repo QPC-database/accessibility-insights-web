@@ -14,7 +14,6 @@ variables:
     windowsImage: 'windows-2019'
     macImage: 'macOS-10.15'
     linuxImage: 'ubuntu-18.04'
-    skipComponentGovernanceDetection: ${SKIP_CG:true}
 
 jobs:
     - job: 'unit_tests_and_lints'
@@ -25,6 +24,8 @@ jobs:
       steps:
           - template: pipeline/install-node-prerequisites.yaml
 
+          - template: pipeline/suppress-component-governance.yaml
+          
           - script: yarn lint:check:all
             displayName: check lint errors
             timeoutInMinutes: 5
@@ -72,93 +73,3 @@ jobs:
           - script: yarn publish-code-coverage -t $(CODECOV_TOKEN)
             displayName: Publish code coverage to codecov
             timeoutInMinutes: 3
-
-    - job: 'publish_build_drops'
-      pool:
-          vmImage: $(linuxImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-
-          - task: ComponentGovernanceComponentDetection@0
-            displayName: 'dependency detection (Component Governance)'
-            condition: and(succeeded(), eq(variables['GenerateReleaseNoticeFile'], 'true'))
-            inputs:
-                detectorsFilter: Yarn
-                ignoreDirectories: 'drop,dist,extension,node_modules'
-                verbosity: Normal
-            timeoutInMinutes: 5
-
-          - task: msospo.ospo-extension.8d7f9abb-6896-461d-9e25-4f74ed65ddb2.notice@0
-            displayName: 'generate NOTICE.html file'
-            condition: and(succeeded(), eq(variables['GenerateReleaseNoticeFile'], 'true'))
-            inputs:
-                outputfile: '$(System.DefaultWorkingDirectory)/src/NOTICE.html'
-                outputformat: html
-            timeoutInMinutes: 5
-
-          - script: yarn build:all
-            displayName: build:all
-            timeoutInMinutes: 10
-
-          - task: PublishBuildArtifacts@1
-            inputs:
-                pathtoPublish: '$(System.DefaultWorkingDirectory)/drop'
-                artifactName: 'drop'
-            displayName: publish drop
-            timeoutInMinutes: 5
-
-    - job: 'e2e_report_linux'
-      pool:
-          vmImage: $(linuxImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-
-          - script: yarn build:package:report
-            displayName: build report package
-            timeoutInMinutes: 5
-
-          - script: yarn test:report:e2e --ci
-            displayName: run report package e2e tests
-            timeoutInMinutes: 5
-
-          - task: PublishTestResults@2
-            inputs:
-                testResultsFiles: $(System.DefaultWorkingDirectory)/packages/report-e2e-tests/test-results/unit/junit.xml
-                testRunTitle: $(Agent.JobName)
-            condition: always()
-            displayName: publish test results
-            timeoutInMinutes: 3
-
-    - job: 'e2e_web_linux'
-      pool:
-          vmImage: $(linuxImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-          - template: pipeline/e2e-test-from-docker.yaml
-          - template: pipeline/e2e-test-publish-results.yaml
-
-    - job: 'e2e_unified_mac'
-      pool:
-          vmImage: $(macImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-          - template: pipeline/unified/unified-e2e-test-interactive.yaml
-          - template: pipeline/unified/unified-e2e-publish-results.yaml
-      condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
-
-    - job: 'e2e_unified_linux'
-      pool:
-          vmImage: $(linuxImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-          - template: pipeline/unified/unified-e2e-test-linux.yaml
-          - template: pipeline/unified/unified-e2e-publish-results.yaml
-
-    - job: 'e2e_unified_windows'
-      pool:
-          vmImage: $(windowsImage)
-      steps:
-          - template: pipeline/install-node-prerequisites.yaml
-          - template: pipeline/unified/unified-e2e-test-interactive.yaml
-          - template: pipeline/unified/unified-e2e-publish-results.yaml
-      condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
