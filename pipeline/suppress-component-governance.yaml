@@ -1,8 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 steps:
-    - script: set
-
     - task: PowerShell@2
       displayName: Suppress auto-injected component governance unless overridden
       inputs:
