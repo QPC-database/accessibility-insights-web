@@ -14,6 +14,7 @@ variables:
     windowsImage: 'windows-2019'
     macImage: 'macOS-10.15'
     linuxImage: 'ubuntu-18.04'
+    skipComponentGovernanceDetection: ${SKIP_CG:true}
 
 jobs:
     - job: 'unit_tests_and_lints'
