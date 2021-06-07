@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 steps:
-    - script: echo "##vso[task.setvariable variable=skipComponentGovernanceDetection;isOutput=true]true"
-      displayName: Suppress auto-injected component governance
-      condition: and (succeeded(), eq($'{{ variables.SKIP_CG }}', ''}))
+    - script: "if /i ('%SKIP_CG%' NEQ 'FALSE') echo ##vso[task.setvariable variable=skipComponentGovernanceDetection;isOutput=true]true"
+      displayName: Suppress auto-injected component governance unless overridden
