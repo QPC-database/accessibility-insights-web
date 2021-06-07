@@ -22,10 +22,10 @@ jobs:
           vmImage: $(linuxImage)
 
       steps:
+          - template: pipeline/suppress-component-governance.yaml
+
           - template: pipeline/install-node-prerequisites.yaml
 
-          - template: pipeline/suppress-component-governance.yaml
-          
           - script: yarn lint:check:all
             displayName: check lint errors
             timeoutInMinutes: 5

@@ -1,5 +1,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 steps:
-    - script: "if /i ('%SKIP_CG%' NEQ 'FALSE') echo ##vso[task.setvariable variable=skipComponentGovernanceDetection;isOutput=true]true"
+    - script: set
+
+    - task: PowerShell@2
       displayName: Suppress auto-injected component governance unless overridden
+      inputs:
+          targetType: inline
+          script: "if ($env:SKIP_CG -ne "false") { echo ##vso[task.setvariable variable=skipComponentGovernanceDetection;isOutput=true]true }"
